@@ -29,6 +29,32 @@ app.use(cors({
 }));
 app.use(express.json());
 
+const prisma = require('./db');
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      status: 'OK',
+      database: 'Connected',
+      env: {
+        DATABASE_URL: process.env.DATABASE_URL ? "Configured" : "Missing",
+        JWT_SECRET: process.env.JWT_SECRET ? "Configured" : "Missing",
+        NODE_ENV: process.env.NODE_ENV || 'development'
+      }
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'Error',
+      database: err.message,
+      env: {
+        DATABASE_URL: process.env.DATABASE_URL ? "Configured" : "Missing",
+        JWT_SECRET: process.env.JWT_SECRET ? "Configured" : "Missing",
+        NODE_ENV: process.env.NODE_ENV || 'development'
+      }
+    });
+  }
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
