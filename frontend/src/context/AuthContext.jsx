@@ -11,9 +11,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const fetchUser = async () => {
       if (!token) {
+        setUser(null);
         setLoading(false);
         return;
       }
+      if (user) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
       try {
         const res = await apiFetch('/api/auth/me', {
           headers: {
@@ -26,9 +32,13 @@ export const AuthProvider = ({ children }) => {
         } else {
           localStorage.removeItem('token');
           setToken(null);
+          setUser(null);
         }
       } catch (err) {
         console.error(err);
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -37,33 +47,45 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (email, password) => {
-    const res = await apiFetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      localStorage.setItem('token', data.token);
-      setToken(data.token);
-      return true;
+    setLoading(true);
+    try {
+      const res = await apiFetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('token', data.token);
+        setUser(data.user);
+        setToken(data.token);
+        return true;
+      }
+      throw new Error(data.msg || 'Login failed');
+    } finally {
+      setLoading(false);
     }
-    throw new Error(data.msg || 'Login failed');
   };
 
   const register = async (name, email, password) => {
-    const res = await apiFetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      localStorage.setItem('token', data.token);
-      setToken(data.token);
-      return true;
+    setLoading(true);
+    try {
+      const res = await apiFetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('token', data.token);
+        setUser(data.user);
+        setToken(data.token);
+        return true;
+      }
+      throw new Error(data.msg || 'Registration failed');
+    } finally {
+      setLoading(false);
     }
-    throw new Error(data.msg || 'Registration failed');
   };
 
   const logout = () => {

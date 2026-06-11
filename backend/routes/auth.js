@@ -11,6 +11,20 @@ const auth = require('../middleware/auth');
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
+  // Input validation
+  if (!name || !email || !password) {
+    return res.status(400).json({ msg: 'Please enter all fields' });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ msg: 'Please enter a valid email address' });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ msg: 'Password must be at least 6 characters long' });
+  }
+
   try {
     let user = await prisma.user.findUnique({ where: { email } });
     if (user) {
@@ -40,7 +54,15 @@ router.post('/register', async (req, res) => {
       { expiresIn: '5 days' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token });
+        res.json({
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            createdAt: user.createdAt
+          }
+        });
       }
     );
   } catch (err) {
@@ -54,6 +76,11 @@ router.post('/register', async (req, res) => {
 // @access  Public
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
+  // Input validation
+  if (!email || !password) {
+    return res.status(400).json({ msg: 'Please enter all fields' });
+  }
 
   try {
     let user = await prisma.user.findUnique({ where: { email } });
@@ -78,12 +105,20 @@ router.post('/login', async (req, res) => {
       { expiresIn: '5 days' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token });
+        res.json({
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            createdAt: user.createdAt
+          }
+        });
       }
     );
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 
