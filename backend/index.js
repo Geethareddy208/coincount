@@ -1,9 +1,24 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const { execSync } = require('child_process');
 
 // Load environment variables relative to this directory
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// Dynamically generate SQLite client if using a local SQLite database URL
+const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
+if (databaseUrl.startsWith('file:')) {
+  console.log("Local SQLite database URL detected. Auto-generating Prisma client for SQLite...");
+  try {
+    execSync('npx prisma generate --schema=prisma/schema.local.prisma', {
+      stdio: 'inherit',
+      cwd: __dirname
+    });
+  } catch (err) {
+    console.error("Failed to automatically generate Prisma client for SQLite:", err.message);
+  }
+}
 
 // Provide safe environment fallbacks for development
 if (!process.env.JWT_SECRET) {

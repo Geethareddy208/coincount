@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  expenses Expense[]
+  incomes  Income[]
+  budgets  Budget[]
+  trips    Trip[]
+}
+
+model Expense {
+  id        String   @id @default(uuid())
+  title     String
+  amount    Float
+  category  String
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  tripId String?
+  trip   Trip?   @relation(fields: [tripId], references: [id])
+}
+
+model Income {
+  id        String   @id @default(uuid())
+  source    String
+  amount    Float
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Budget {
+  id       String @id @default(uuid())
+  category String // e.g., "Food", "Total", "Travel"
+  amount   Float
+  month    Int
+  year     Int
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, category, month, year])
+}
+
+model Trip {
+  id          String   @id @default(uuid())
+  name        String
+  destination String
+  startDate   DateTime
+  endDate     DateTime
+  budget      Float?
+  createdAt   DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  expenses Expense[]
+}
